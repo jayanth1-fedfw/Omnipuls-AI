@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   AssistantMode,
   AssistantResponse,
   CopilotSuggestion,
@@ -6,7 +6,7 @@ import type {
   OmnipulsState,
   Priority,
   TaskInput
-} from "./types";
+} from "@/lib/types";
 
 type OpenAIResponse = {
   output_text?: string;
@@ -19,7 +19,7 @@ type OpenAIResponse = {
 
 export async function generateCopilotSuggestion(message: string, state: OmnipulsState): Promise<CopilotSuggestion> {
   if (process.env.OPENAI_API_KEY) {
-    const remote = await generateWithOpenAIResponsesForCopilot(message, state);
+    const remote = await generateWithOpenAIAssistant(message, state);
     if (remote) {
       return remote;
     }
@@ -34,7 +34,7 @@ export async function generateAssistantResponse(
   state: OmnipulsState
 ): Promise<AssistantResponse> {
   if (process.env.OPENAI_API_KEY) {
-    const remote = await generateWithOpenAIResponsesForAssistant(message, state, mode);
+    const remote = await generateWithOpenAIAssistant(message, state, mode);
     if (remote) {
       return remote;
     }
@@ -43,14 +43,228 @@ export async function generateAssistantResponse(
   return generateLocalAssistant(message, state, mode);
 }
 
-async function generateWithOpenAIResponsesForCopilot(message: string, state: OmnipulsState): Promise<CopilotSuggestion | null> {
-  const apiKey = process.env.OPENAI_API_KEY as string | undefined;
-  if (!apiKey) return null;
+async function generateWithOpenAIAssistant(message: string, state: OmnipulsState): Promise<CopilotSuggestion | null> {
+  if (!process.env.OPENAI_ASSISTANT_ID) {
+    // Fallback to Responses API if assistant ID not set
+    return await generateWithOpenAIResponses(message, state);
+  }
 
+  const assistantId = process.env.OPENAI_ASSISTANT_ID;
+  try {
+    const thread = await createThread();
+    const threadId = thread.id;
+
+    // Prepare the input content similar to before
+    const inputContent = JSON.stringify({
+      request: message,
+      existingTasks: state.tasks.slice(0, 8),
+      memories: state.memories.slice(0, 8),
+      manualAlerts: state.manualAlerts.slice(0, 8),
+      now: new Date().toISOString()
+    });
+
+    const userMessage = You are Omnipuls, a customer-work alert AI. Return only JSON with keys reply, memory, task, manualAlert. task must include customerName, workGoal, sourceMemory, deadline ISO string, dailyTime HH:MM, priority low|medium|high|critical, status active|complete. manualAlert must include message and alertAt ISO string. Omit keys you cannot infer.
+
+Input:
+\;
+
+    await addMessage(threadId, userMessage);
+    const run = await createRun(threadId, assistantId);
+    const completedRun = await pollRun(threadId, run.id);
+
+    if (completedRun.status !== "completed") {
+      throw new Error(\Assistant run failed with status: \\);
+    }
+
+    const messages = await getMessages(threadId);
+    // Get the latest assistant message
+    const assistantMessage = messages.data.find(msg => msg.role === "assistant");
+    if (!assistantMessage) {
+      throw new Error("No assistant message found");
+    }
+
+    // Extract text content from the message
+    const textContent = assistantMessage.content
+      .find((block: any) => block.type === "text")?.text?.value;
+
+    if (!textContent) {
+      throw new Error("No text content in assistant message");
+    }
+
+    try {
+      return normalizeSuggestion(JSON.parse(textContent));
+    } catch {
+      return null;
+    }
+  } catch (error) {
+    console.error("Error in assistant call:", error);
+    // Fallback to Responses API on error
+    return await generateWithOpenAIResponses(message, state);
+  }
+}
+
+async function generateWithOpenAIAssistant(message: string, state: OmnipulsState, mode: AssistantMode): Promise<AssistantResponse | null> {
+  if (!process.env.OPENAI_ASSISTANT_ID) {
+    // Fallback to Responses API if assistant ID not set
+    return await generateWithOpenAIResponses(message, state, mode);
+  }
+
+  const assistantId = process.env.OPENAI_ASSISTANT_ID;
+  try {
+    const thread = await createThread();
+    const threadId = thread.id;
+
+    // Prepare the input content similar to before
+    const inputContent = JSON.stringify({
+      message,
+      mode,
+      tasks: state.tasks.slice(0, 6),
+      memories: state.memories.slice(0, 6),
+      manualAlerts: state.manualAlerts.slice(0, 6),
+      now: new Date().toISOString()
+    });
+
+    const userMessage = You are Omnipuls Studio, a general AI assistant for workflow, deep learning help, research, and planning. Return structured JSON only.
+
+Input:
+\;
+
+    await addMessage(threadId, userMessage);
+    const run = await createRun(threadId, assistantId);
+    const completedRun = await pollRun(threadId, run.id);
+
+    if (completedRun.status !== "completed") {
+      throw new Error(\Assistant run failed with status: \\);
+    }
+
+    const messages = await getMessages(threadId);
+    // Get the latest assistant message
+    const assistantMessage = messages.data.find(msg => msg.role === "assistant");
+    if (!assistantMessage) {
+      throw new Error("No assistant message found");
+    }
+
+    // Extract text content from the message
+    const textContent = assistantMessage.content
+      .find((block: any) => block.type === "text")?.text?.value;
+
+    if (!textContent) {
+      throw new Error("No text content in assistant message");
+    }
+
+    try {
+      return normalizeAssistant(JSON.parse(textContent));
+    } catch {
+      return null;
+    }
+  } catch (error) {
+    console.error("Error in assistant call:", error);
+    // Fallback to Responses API on error
+    return await generateWithOpenAIResponses(message, state, mode);
+  }
+}
+
+// Helper functions for OpenAI Assistant API
+async function createThread() {
+  const response = await fetch("https://api.openai.com/v1/threads", {
+    method: "POST",
+    headers: {
+      Authorization: \Bearer \\,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({})
+  });
+
+  if (!response.ok) {
+    throw new Error(\Failed to create thread: \\);
+  }
+  return response.json();
+}
+
+async function addMessage(threadId: string, content: string) {
+  const response = await fetch(\https://api.openai.com/v1/threads/\/messages\, {
+    method: "POST",
+    headers: {
+      Authorization: \Bearer \\,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      role: "user",
+      content
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(\Failed to add message: \\);
+  }
+  return response.json();
+}
+
+async function createRun(threadId: string, assistantId: string) {
+  const response = await fetch(\https://api.openai.com/v1/threads/\/runs\, {
+    method: "POST",
+    headers: {
+      Authorization: \Bearer \\,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      assistant_id: assistantId
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(\Failed to create run: \\);
+  }
+  return response.json();
+}
+
+async function pollRun(threadId: string, runId: string): Promise<any> {
+  let attempts = 0;
+  const maxAttempts = 30; // 30 seconds with 1 second interval
+  while (attempts < maxAttempts) {
+    const response = await fetch(\https://api.openai.com/v1/threads/\/runs/\\, {
+      method: "GET",
+      headers: {
+        Authorization: \Bearer \\
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(\Failed to poll run: \\);
+    }
+
+    const run = await response.json();
+    if (run.status === "completed" || run.status === "failed" || run.status === "cancelled" || run.status === "expired") {
+      return run;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 1000)); // wait 1 second
+    attempts++;
+  }
+
+  throw new Error("Assistant run timed out");
+}
+
+async function getMessages(threadId: string) {
+  const response = await fetch(\https://api.openai.com/v1/threads/\/messages\, {
+    method: "GET",
+    headers: {
+      Authorization: \Bearer \\
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(\Failed to get messages: \\);
+  }
+  return response.json();
+}
+
+// Fallback to Responses API (original implementation)
+async function generateWithOpenAIResponses(message: string, state: OmnipulsState): Promise<CopilotSuggestion | null> {
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: \Bearer \\,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
@@ -80,7 +294,9 @@ async function generateWithOpenAIResponsesForCopilot(message: string, state: Omn
   const data = (await response.json()) as OpenAIResponse;
   const text = data.output_text || data.output?.flatMap((item) => item.content || []).find((item) => item.text)?.text;
 
-  if (!text) return null;
+  if (!text) {
+    return null;
+  }
 
   try {
     return normalizeSuggestion(JSON.parse(text));
@@ -89,18 +305,15 @@ async function generateWithOpenAIResponsesForCopilot(message: string, state: Omn
   }
 }
 
-async function generateWithOpenAIResponsesForAssistant(
+async function generateWithOpenAIResponses(
   message: string,
   state: OmnipulsState,
   mode: AssistantMode
 ): Promise<AssistantResponse | null> {
-  const apiKey = process.env.OPENAI_API_KEY as string | undefined;
-  if (!apiKey) return null;
-
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: \Bearer \\,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
@@ -135,7 +348,7 @@ async function generateWithOpenAIResponsesForAssistant(
                   workGoal: { type: "string" },
                   sourceMemory: { type: "string" },
                   deadline: { type: "string", format: "date-time" },
-                  dailyTime: { type: "string", pattern: "^[0-2][0-9]:[0-5][0-9]$" },
+                  dailyTime: { type: "string", pattern: "^[0-2][0-9]:[0-5][0-9]\$" },
                   priority: { type: "string", enum: ["low", "medium", "high", "critical"] },
                   status: { type: "string", enum: ["active", "complete"] }
                 },
@@ -165,17 +378,21 @@ async function generateWithOpenAIResponsesForAssistant(
             }
           }
         }
-      },
+      }),
       max_output_tokens: 900
     })
   });
 
-  if (!response.ok) return null;
+  if (!response.ok) {
+    return null;
+  }
 
   const data = (await response.json()) as OpenAIResponse;
   const text = data.output_text || data.output?.flatMap((item) => item.content || []).find((item) => item.text)?.text;
 
-  if (!text) return null;
+  if (!text) {
+    return null;
+  }
 
   try {
     return normalizeAssistant(JSON.parse(text));
@@ -184,7 +401,7 @@ async function generateWithOpenAIResponsesForAssistant(
   }
 }
 
-// normalize/utility functions
+// The rest of the file remains unchanged: normalizeSuggestion, normalizeAssistant, etc.
 function normalizeSuggestion(value: Partial<CopilotSuggestion>): CopilotSuggestion {
   return {
     reply: typeof value.reply === "string" ? value.reply : "I prepared a response.",
@@ -213,7 +430,9 @@ function normalizeAssistant(value: Partial<AssistantResponse>): AssistantRespons
 }
 
 function normalizeTask(value: Partial<TaskInput>): TaskInput | undefined {
-  if (!value || !value.customerName || !value.workGoal) return undefined;
+  if (!value.customerName || !value.workGoal) {
+    return undefined;
+  }
 
   return {
     customerName: String(value.customerName),
@@ -221,13 +440,15 @@ function normalizeTask(value: Partial<TaskInput>): TaskInput | undefined {
     sourceMemory: String(value.sourceMemory || ""),
     deadline: validDate(value.deadline) || defaultDeadline(),
     dailyTime: /^\d{2}:\d{2}$/.test(String(value.dailyTime)) ? String(value.dailyTime) : "09:00",
-    priority: isPriority(value.priority) ? value.priority as Priority : "medium",
-    status: (value as any).status === "complete" ? "complete" : "active"
+    priority: isPriority(value.priority) ? value.priority : "medium",
+    status: value.status === "complete" ? "complete" : "active"
   };
 }
 
 function normalizeManualAlert(value: Partial<ManualAlertInput>): ManualAlertInput | undefined {
-  if (!value || !value.message) return undefined;
+  if (!value.message) {
+    return undefined;
+  }
 
   return {
     message: String(value.message),
@@ -271,7 +492,7 @@ function extractDeadline(message: string) {
 
 function extractTime(message: string) {
   const match = message.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
-  return match ? `${match[1].padStart(2, "0")}:${match[2]}` : undefined;
+  return match ? \\:\\ : undefined;
 }
 
 function defaultDeadline() {
@@ -282,7 +503,9 @@ function defaultDeadline() {
 }
 
 function validDate(value: unknown) {
-  if (typeof value !== "string") return undefined;
+  if (typeof value !== "string") {
+    return undefined;
+  }
 
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
@@ -297,7 +520,7 @@ function generateLocalSuggestion(message: string, state: OmnipulsState): Copilot
   const reply =
     lower.includes("deadline") || lower.includes("follow up") || lower.includes("remind")
       ? "I've captured the request and can turn it into a structured action or memory entry."
-      : "I've noted your request. Let me know if you'd like me to turn it into a task, memory, or manual alert.";
+      : "Iâ€™ve noted your request. Let me know if you'd like me to turn it into a task, memory, or manual alert.";
 
   return {
     reply,
@@ -324,7 +547,7 @@ function generateLocalAssistant(message: string, state: OmnipulsState, mode: Ass
       ? "I can help with deep learning workflows: dataset prep, training plans, evaluation, debugging, and model summaries. Based on your note, I would start by turning this into a clear experiment log and action list."
       : mode === "research"
         ? "I can help structure the research question, collect context, and turn the answer into a reusable note inside the browser vault."
-        : "I've captured the request and can turn it into a structured action or memory entry.";
+        : "Iâ€™ve captured the request and can turn it into a structured action or memory entry.";
 
   return {
     reply,

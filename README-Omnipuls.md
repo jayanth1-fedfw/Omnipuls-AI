@@ -1,4 +1,4 @@
-﻿# Omnipuls
+# Omnipuls
 
 Omnipuls is a full-stack customer-work alert AI dashboard. It stores customer context from previous browsing or AI bot chats, creates daily creative reminders until the work deadline, and supports one-off manual alerts.
 
@@ -31,6 +31,7 @@ Optional environment variables:
 ```bash
 OPENAI_API_KEY=your_key
 OPENAI_MODEL=gpt-4.1-mini
+OPENAI_ASSISTANT_ID=your_assistant_id
 ```
 
 ## Deploy
@@ -45,4 +46,3 @@ If `vercel` is not installed, use:
 ```bash
 npx vercel --prod
 ```
-

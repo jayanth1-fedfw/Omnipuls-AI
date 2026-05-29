@@ -56,3 +56,26 @@ export type CopilotSuggestion = {
   task?: TaskInput;
   manualAlert?: ManualAlertInput;
 };
+
+export type AssistantMode = "general" | "deep_learning" | "workflow" | "research";
+
+export type AssistantRecord = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  mode: AssistantMode;
+  createdAt: string;
+};
+
+export type AssistantResponse = {
+  reply: string;
+  mode: AssistantMode;
+  memory?: string;
+  task?: TaskInput;
+  manualAlert?: ManualAlertInput;
+  vaultEntry?: {
+    title: string;
+    note: string;
+    tags: string[];
+  };
+};
