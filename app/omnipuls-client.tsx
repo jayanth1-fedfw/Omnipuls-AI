@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { createAlertMessage, remainingText } from "@/lib/alerts";
 import type { AlertTone, CopilotSuggestion, OmnipulsState, Task } from "@/lib/types";
+import CalculatorBrowser from "@/app/components/calculator-browser";
 
 type Props = {
   initialState: OmnipulsState;
@@ -33,6 +34,7 @@ export default function OmnipulsClient({ initialState }: Props) {
   const [copilotSuggestion, setCopilotSuggestion] = useState<CopilotSuggestion | null>(null);
   const [copilotBusy, setCopilotBusy] = useState(false);
   const [accessMode, setAccessMode] = useState<AccessMode>("comfortable");
+  const [alerts, setAlerts] = useState<{ id: string; message: string; timestamp: number }[]>([]);
   const activeTasks = state.tasks.filter((task) => task.status !== "complete");
   const completedTasks = state.tasks.filter((task) => task.status === "complete");
   const criticalTasks = activeTasks.filter((task) => task.priority === "critical" || task.priority === "high");
@@ -249,6 +251,11 @@ export default function OmnipulsClient({ initialState }: Props) {
     await refreshState();
   }
 
+  function handleCalculatorAlert(message: string) {
+    setToast(message);
+    fireAlert("Calculator Alert", message);
+  }
+
   function editTask(task: Task) {
     setEditingId(task.id);
     setTaskForm({
@@ -431,6 +438,10 @@ export default function OmnipulsClient({ initialState }: Props) {
               </div>
             </div>
           ) : null}
+        </section>
+
+        <section className="panel" style={{ padding: "2rem", marginTop: "2rem" }}>
+          <CalculatorBrowser onAlert={handleCalculatorAlert} />
         </section>
 
         <section className="grid">
