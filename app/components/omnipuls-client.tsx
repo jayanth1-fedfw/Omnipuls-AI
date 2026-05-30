@@ -19,6 +19,16 @@ type ChatMessage = {
   timestamp: number;
 };
 
+type CopilotSuggestionType = {
+  reply: string;
+  memory?: string;
+  task?: Task;
+  manualAlert?: {
+    message: string;
+    alertAt: string;
+  };
+} | null;
+
 // ── Constants ──────────────────────────────────────────────────
 
 const blankTask = {
@@ -92,14 +102,14 @@ export default function OmnipulsClient({ initialState }: Props) {
   // ── Core state ─────────────────────────────────────────────
   const [state, setState] = useState(initialState);
   const [taskForm, setTaskForm] = useState(blankTask);
-  const [editingId, setEditingId] = useState(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [memoryText, setMemoryText] = useState("");
   const [manualMessage, setManualMessage] = useState("");
   const [manualAt, setManualAt] = useState("");
-  const [tone, setTone] = useState("creative");
+  const [tone, setTone] = useState<AlertTone>("creative");
   const [toast, setToast] = useState("");
   const [copilotMessage, setCopilotMessage] = useState("");
-  const [copilotSuggestion, setCopilotSuggestion] = useState(null);
+  const [copilotSuggestion, setCopilotSuggestion] = useState<CopilotSuggestionType>(null);
   const [copilotBusy, setCopilotBusy] = useState(false);
   const [accessMode, setAccessMode] = useState("comfortable");
 
@@ -114,8 +124,8 @@ export default function OmnipulsClient({ initialState }: Props) {
   ]);
   const [chatInput, setChatInput] = useState("");
   const [chatBusy, setChatBusy] = useState(false);
-  const chatLogRef = useRef(null);
-  const chatInputRef = useRef(null);
+  const chatLogRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
 
   // ── Derived ────────────────────────────────────────────────
   const activeTasks = state.tasks.filter((t) => t.status !== "complete");

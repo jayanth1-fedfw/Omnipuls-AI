@@ -36,7 +36,6 @@ export async function generatePulseResponse(req: PulseRequest): Promise<PulseRes
 Active automations: ${activeTasks.length} (${criticalTasks.length} high/critical)
 Completed: ${completedTasks.length}
 Memories stored: ${state.memories.length}
-Alert tone: ${state.tone || "creative"}
 Next deadline: ${pulseSummary}
 
 [User message]
