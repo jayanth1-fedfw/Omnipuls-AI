@@ -92,19 +92,19 @@ export default function OmnipulsClient({ initialState }: Props) {
   // ── Core state ─────────────────────────────────────────────
   const [state, setState] = useState(initialState);
   const [taskForm, setTaskForm] = useState(blankTask);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState(null);
   const [memoryText, setMemoryText] = useState("");
   const [manualMessage, setManualMessage] = useState("");
   const [manualAt, setManualAt] = useState("");
-  const [tone, setTone] = useState<AlertTone>("creative");
+  const [tone, setTone] = useState("creative");
   const [toast, setToast] = useState("");
   const [copilotMessage, setCopilotMessage] = useState("");
-  const [copilotSuggestion, setCopilotSuggestion] = useState<CopilotSuggestion | null>(null);
+  const [copilotSuggestion, setCopilotSuggestion] = useState(null);
   const [copilotBusy, setCopilotBusy] = useState(false);
-  const [accessMode, setAccessMode] = useState<AccessMode>("comfortable");
+  const [accessMode, setAccessMode] = useState("comfortable");
 
   // ── Pulse chat state ───────────────────────────────────────
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+  const [chatMessages, setChatMessages] = useState([
     {
       id: uid(),
       role: "ai",
@@ -114,8 +114,8 @@ export default function OmnipulsClient({ initialState }: Props) {
   ]);
   const [chatInput, setChatInput] = useState("");
   const [chatBusy, setChatBusy] = useState(false);
-  const chatLogRef = useRef<HTMLDivElement>(null);
-  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const chatLogRef = useRef(null);
+  const chatInputRef = useRef(null);
 
   // ── Derived ────────────────────────────────────────────────
   const activeTasks = state.tasks.filter((t) => t.status !== "complete");
@@ -189,7 +189,7 @@ export default function OmnipulsClient({ initialState }: Props) {
     if (response.ok) setState(data);
   }
 
-  async function saveTask(event: FormEvent<HTMLFormElement>) {
+  async function saveTask(event: FormEvent) {
     event.preventDefault();
     const response = await fetch("/api/tasks", {
       method: "POST",
@@ -207,7 +207,7 @@ export default function OmnipulsClient({ initialState }: Props) {
     await refreshState();
   }
 
-  async function addMemory(event: FormEvent<HTMLFormElement>) {
+  async function addMemory(event: FormEvent) {
     event.preventDefault();
     if (!memoryText.trim()) return;
     const response = await fetch("/api/memories", {
@@ -221,7 +221,7 @@ export default function OmnipulsClient({ initialState }: Props) {
     }
   }
 
-  async function addManualAlert(event: FormEvent<HTMLFormElement>) {
+  async function addManualAlert(event: FormEvent) {
     event.preventDefault();
     const response = await fetch("/api/manual-alerts", {
       method: "POST",
@@ -238,7 +238,7 @@ export default function OmnipulsClient({ initialState }: Props) {
     await refreshState();
   }
 
-  async function askCopilot(event: FormEvent<HTMLFormElement>) {
+  async function askCopilot(event: FormEvent) {
     event.preventDefault();
     if (!copilotMessage.trim()) return;
     setCopilotBusy(true);
@@ -370,7 +370,7 @@ export default function OmnipulsClient({ initialState }: Props) {
     chatInputRef.current?.focus();
   }
 
-  function handleChatKey(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+  function handleChatKey(event: React.KeyboardEvent) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       sendChatMessage();
@@ -433,136 +433,125 @@ export default function OmnipulsClient({ initialState }: Props) {
   // ── Render ─────────────────────────────────────────────────
 
   return (
-    <main className={`shell ${accessMode}`}>
-      <a className="skip-link" href="#workspace">
-        Skip to workspace
-      </a>
-
+    <div style={{ display: "flex", minHeight: "100vh", gap: "1.5rem", padding: "1.5rem" }}>
       {/* Sidebar */}
-      <aside className="sidebar" aria-label="Omnipuls navigation and settings">
-        <div className="brand">
-          <span className="brand-mark" aria-hidden="true">O</span>
-          <div>
-            <h1>Omnipuls</h1>
-            <p>Customer work alert AI</p>
+      <aside style={{ width: "200px", flexShrink: 0 }}>
+        <div>
+          <div style={{ fontSize: "1.75rem", fontWeight: "bold" }}>
+            O
+          </div>
+          <div style={{ marginBottom: "1rem" }}>
+            <div style={{ fontWeight: "bold" }}>Omnipuls</div>
+            <div style={{ fontSize: "0.75rem", opacity: 0.6 }}>
+              Customer work alert AI
+            </div>
           </div>
         </div>
 
-        <nav className="nav-list" aria-label="Dashboard sections">
-          <a href="#copilot">AI Copilot</a>
-          <a href="#pulse-chat">Pulse Chat</a>
-          <a href="#customer-work">Customer Work</a>
-          <a href="#manual-alerts">Manual Alerts</a>
-          <a href="#automations">Automations</a>
+        <nav style={{ marginBottom: "1.5rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <a href="#copilot" style={{ textDecoration: "none", cursor: "pointer" }}>AI Copilot</a>
+          <a href="#pulse-chat" style={{ textDecoration: "none", cursor: "pointer" }}>Pulse Chat</a>
+          <a href="#customer-work" style={{ textDecoration: "none", cursor: "pointer" }}>Customer Work</a>
+          <a href="#manual-alerts" style={{ textDecoration: "none", cursor: "pointer" }}>Manual Alerts</a>
+          <a href="#automations" style={{ textDecoration: "none", cursor: "pointer" }}>Automations</a>
         </nav>
 
-        <section className="panel compact">
-          <div className="panel-title">
-            <h2>Alert Pulse</h2>
-            <button
-              className="icon-button"
-              title="Enable browser alerts"
-              type="button"
-              onClick={requestNotifications}
-            >
-              <span aria-hidden="true">!</span>
-              <span className="sr-only">Enable browser alerts</span>
-            </button>
-          </div>
-          <p className="muted">{pulseSummary}</p>
-          <div className="signal">
-            <span /><span /><span />
-          </div>
-        </section>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <button onClick={requestNotifications} style={{ padding: "0.5rem", width: "100%" }}>
+            Enable browser alerts
+          </button>
+          <div style={{ marginTop: "0.5rem", fontSize: "0.875rem" }}>{pulseSummary}</div>
+        </div>
 
-        <section className="panel compact">
-          <div className="panel-title">
-            <h2>Daily Style</h2>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem" }}>
+            Daily Style
+          </label>
+          <div style={{ fontSize: "0.75rem", opacity: 0.6, marginBottom: "0.5rem" }}>
+            Daily alert writing style
           </div>
-          <label className="sr-only" htmlFor="tone">Daily alert writing style</label>
-          <select
-            id="tone"
-            value={tone}
-            onChange={(e) => setTone(e.target.value as AlertTone)}
-          >
+          <select value={tone} onChange={(e) => setTone(e.target.value as AlertTone)} style={{ width: "100%" }}>
             <option value="focused">Focused</option>
             <option value="creative">Creative</option>
             <option value="urgent">Urgent</option>
             <option value="kind">Kind</option>
           </select>
-        </section>
+        </div>
 
-        <section className="panel compact">
-          <div className="panel-title">
-            <h2>Access Mode</h2>
-            <span>Inclusive</span>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem" }}>
+            Access Mode
+          </label>
+          <div style={{ fontSize: "0.75rem", opacity: 0.6, marginBottom: "0.5rem" }}>
+            Inclusive
           </div>
-          <div className="segmented" role="group" aria-label="Accessibility display mode">
+          <div style={{ display: "flex", gap: "0.5rem" }}>
             {(["comfortable", "focus", "large"] as AccessMode[]).map((mode) => (
               <button
                 key={mode}
-                className={accessMode === mode ? "selected" : ""}
-                type="button"
                 onClick={() => setAccessMode(mode)}
+                style={{ flex: 1, padding: "0.5rem", background: accessMode === mode ? "#3c3489" : "#f0f0f0", color: accessMode === mode ? "white" : "black" }}
               >
                 {mode.charAt(0).toUpperCase() + mode.slice(1)}
               </button>
             ))}
           </div>
-        </section>
+        </div>
 
-        <section className="panel compact">
-          <div className="panel-title">
-            <h2>Platform Health</h2>
-            <span>Live</span>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <div style={{ fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem" }}>
+            Platform Health
           </div>
-          <div className="stat-list">
-            <span>{activeTasks.length} active</span>
-            <span>{criticalTasks.length} high focus</span>
-            <span>{completedTasks.length} complete</span>
-            <span>{state.memories.length} memories</span>
+          <div style={{ fontSize: "0.75rem", opacity: 0.6, marginBottom: "0.25rem" }}>
+            Live
           </div>
-        </section>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: "0.75rem" }}>
+            <div>{activeTasks.length} active</div>
+            <div>{criticalTasks.length} high focus</div>
+            <div>{completedTasks.length} complete</div>
+            <div>{state.memories.length} memories</div>
+          </div>
+        </div>
       </aside>
 
       {/* Workspace */}
-      <section className="workspace" id="workspace">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">Neural operations deck</p>
-            <h2>Convert customer signals into intelligent work pulses</h2>
-            <p className="topbar-copy">
-              Command Omnipuls in natural language, preserve customer memory, and launch
-              accessible deadline alerts that stay useful.
-            </p>
-          </div>
-          <button className="secondary-button" type="button" onClick={loadDemo}>
+      <main style={{ flex: 1 }}>
+        <div style={{ marginBottom: "2rem" }}>
+          <h1 style={{ marginBottom: "0.5rem" }}>Neural operations deck</h1>
+          <p style={{ opacity: 0.6, marginBottom: "0.5rem" }}>
+            Convert customer signals into intelligent work pulses
+          </p>
+          <p style={{ fontSize: "0.875rem", opacity: 0.6, marginBottom: "1rem" }}>
+            Command Omnipuls in natural language, preserve customer memory, and launch
+            accessible deadline alerts that stay useful.
+          </p>
+          <button onClick={loadDemo} style={{ padding: "0.5rem 1rem" }}>
             Load demo
           </button>
-        </header>
+        </div>
 
         {/* AI Copilot — action generator */}
-        <section className="command-panel" id="copilot" aria-labelledby="copilot-heading">
-          <div className="command-copy">
-            <p className="eyebrow">Omnipuls AI Copilot</p>
-            <h2 id="copilot-heading">
-              Describe the signal. Omnipuls generates the next action.
-            </h2>
-            <p>
-              Built for teams, founders, support agents, students, and anyone who needs
-              a clear path from conversation to completion.
-            </p>
-          </div>
-          <form className="copilot-command" onSubmit={askCopilot}>
-            <label htmlFor="copilot-message">Ask Omnipuls</label>
-            <textarea
-              id="copilot-message"
-              rows={5}
-              placeholder="For customer Mira, remind me daily at 09:30 to finish onboarding before tomorrow. They asked about pricing and launch time."
+        <section id="copilot" style={{ marginBottom: "2rem", padding: "1.5rem", border: "1px solid #ddd", borderRadius: "0.5rem" }}>
+          <h2 style={{ marginBottom: "0.5rem" }}>Omnipuls AI Copilot</h2>
+          <p style={{ fontSize: "0.875rem", opacity: 0.6, marginBottom: "0.5rem" }}>
+            Describe the signal. Omnipuls generates the next action.
+          </p>
+          <p style={{ fontSize: "0.75rem", opacity: 0.6, marginBottom: "1rem" }}>
+            Built for teams, founders, support agents, students, and anyone who needs
+            a clear path from conversation to completion.
+          </p>
+
+          <form onSubmit={askCopilot} style={{ marginBottom: "1rem" }}>
+            <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem" }}>
+              Ask Omnipuls
+            </label>
+            <input
+              type="text"
               value={copilotMessage}
               onChange={(e) => setCopilotMessage(e.target.value)}
+              style={{ width: "100%", padding: "0.5rem", marginBottom: "0.5rem" }}
             />
-            <div className="prompt-chips" aria-label="Prompt starters">
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
               {[
                 "Create a daily follow-up",
                 "Turn this chat into a deadline",
@@ -572,44 +561,39 @@ export default function OmnipulsClient({ initialState }: Props) {
                   key={prompt}
                   type="button"
                   onClick={() => setCopilotMessage(prompt)}
+                  style={{ fontSize: "0.75rem", padding: "0.3rem 0.75rem", background: "#f0f0f0", border: "1px solid #ddd" }}
                 >
                   {prompt}
                 </button>
               ))}
             </div>
-            <button className="primary-button" type="submit" disabled={copilotBusy}>
+
+            <button type="submit" style={{ padding: "0.5rem 1rem" }}>
               {copilotBusy ? "Thinking…" : "Generate action"}
             </button>
           </form>
 
           {copilotSuggestion && (
-            <div className="copilot-result" role="status" aria-live="polite">
-              <p>{copilotSuggestion.reply}</p>
+            <div style={{ padding: "1rem", background: "#f0f0f0", borderRadius: "0.5rem", marginBottom: "1rem" }}>
+              <p style={{ marginBottom: "0.5rem" }}>{copilotSuggestion.reply}</p>
+
               {copilotSuggestion.task && (
-                <div className="meta-row">
-                  <span>Task: {copilotSuggestion.task.workGoal}</span>
-                  <span>Customer: {copilotSuggestion.task.customerName}</span>
-                  <span>Daily: {copilotSuggestion.task.dailyTime}</span>
+                <div style={{ fontSize: "0.875rem", marginBottom: "0.5rem" }}>
+                  <div>Task: {copilotSuggestion.task.workGoal}</div>
+                  <div>Customer: {copilotSuggestion.task.customerName}</div>
+                  <div>Daily: {copilotSuggestion.task.dailyTime}</div>
                 </div>
               )}
               {copilotSuggestion.manualAlert && (
-                <div className="meta-row">
-                  <span>Manual: {copilotSuggestion.manualAlert.message}</span>
+                <div style={{ fontSize: "0.875rem", marginBottom: "0.5rem" }}>
+                  <div>Manual: {copilotSuggestion.manualAlert.message}</div>
                 </div>
               )}
-              <div className="actions">
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={applyCopilotSuggestion}
-                >
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+                <button onClick={applyCopilotSuggestion} style={{ padding: "0.5rem 1rem" }}>
                   Apply suggestion
                 </button>
-                <button
-                  className="ghost-button"
-                  type="button"
-                  onClick={() => setCopilotSuggestion(null)}
-                >
+                <button onClick={() => setCopilotSuggestion(null)} style={{ padding: "0.5rem 1rem" }}>
                   Dismiss
                 </button>
               </div>
@@ -618,18 +602,13 @@ export default function OmnipulsClient({ initialState }: Props) {
         </section>
 
         {/* Pulse AI Chatbot — replaces CalculatorBrowser */}
-        <section
-          className="panel pulse-chat-panel"
-          id="pulse-chat"
-          aria-labelledby="pulse-chat-heading"
-          style={{ marginTop: "2rem" }}
-        >
-          <div className="panel-title">
-            <h2 id="pulse-chat-heading">Pulse — AI Copilot Chat</h2>
+        <section id="pulse-chat" style={{ marginBottom: "2rem", padding: "1.5rem", border: "1px solid #ddd", borderRadius: "0.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+            <h2 style={{ margin: 0 }}>Pulse — AI Copilot Chat</h2>
             <span className="pulse-chat-badge">Claude-powered</span>
           </div>
 
-          <div className="pulse-chat-chips" aria-label="Quick questions">
+          <div className="pulse-chat-chips">
             {[
               "Summarize my active tasks",
               "Which customer is most urgent?",
@@ -638,370 +617,351 @@ export default function OmnipulsClient({ initialState }: Props) {
             ].map((chip) => (
               <button
                 key={chip}
-                className="ghost-button pulse-chip"
-                type="button"
                 onClick={() => handleChatChip(chip)}
+                className="pulse-chip"
+                style={{ padding: "0.3rem 0.75rem" }}
               >
                 {chip}
               </button>
             ))}
           </div>
 
-          <div
-            className="pulse-chat-log"
-            ref={chatLogRef}
-            role="log"
-            aria-live="polite"
-            aria-label="Pulse AI conversation"
-          >
+          <div className="pulse-chat-log" ref={chatLogRef}>
             {chatMessages.map((msg) => (
-              <div key={msg.id} className={`pulse-msg pulse-msg--${msg.role}`}>
-                <div className="pulse-msg__bubble">
+              <div key={msg.id} className="pulse-msg">
+                <div>
                   {msg.text}
-                  <time
-                    className="pulse-msg__time"
-                    dateTime={new Date(msg.timestamp).toISOString()}
-                  >
+                  <div style={{ fontSize: "0.7rem", opacity: 0.5, marginTop: "0.25rem" }}>
                     {new Intl.DateTimeFormat(undefined, { timeStyle: "short" }).format(
                       new Date(msg.timestamp)
                     )}
-                  </time>
+                  </div>
                 </div>
               </div>
             ))}
 
             {chatBusy && (
-              <div className="pulse-msg pulse-msg--ai" aria-label="Pulse is thinking">
-                <div className="pulse-msg__bubble pulse-typing">
-                  <span /><span /><span />
-                </div>
+              <div className="pulse-msg">
+                <div style={{ opacity: 0.6 }}>Pulse is thinking…</div>
               </div>
             )}
           </div>
 
-          <div className="pulse-chat-input-row">
-            <label className="sr-only" htmlFor="pulse-chat-input">
+          <form onSubmit={(e) => { e.preventDefault(); sendChatMessage(); }} style={{ display: "flex", gap: "0.5rem" }}>
+            <label style={{ fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem", display: "block", width: "100%" }}>
               Message Pulse
             </label>
             <textarea
-              id="pulse-chat-input"
               ref={chatInputRef}
-              className="pulse-chat-input"
-              rows={1}
-              placeholder="Ask Pulse about your platform, customers, or alert strategy…"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={handleChatKey}
               disabled={chatBusy}
+              style={{ width: "100%", flex: 1, padding: "0.5rem", marginBottom: "0.5rem" }}
             />
-            <button
-              className="primary-button pulse-send-btn"
-              type="button"
-              onClick={sendChatMessage}
-              disabled={chatBusy || !chatInput.trim()}
-              aria-label="Send message to Pulse"
-            >
+            <button type="submit" style={{ padding: "0.5rem 1rem" }}>
               {chatBusy ? "…" : "Send"}
             </button>
-          </div>
+          </form>
         </section>
 
         {/* Customer Work + Memory grid */}
-        <section className="grid">
-          <form
-            className="panel form-panel"
-            id="customer-work"
-            onSubmit={saveTask}
-            aria-labelledby="customer-work-heading"
-          >
-            <div className="panel-title">
-              <h2 id="customer-work-heading">Customer Work</h2>
-              <span>{editingId ? "Editing" : "New"}</span>
-            </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "2rem" }}>
+          <section id="customer-work" style={{ padding: "1.5rem", border: "1px solid #ddd", borderRadius: "0.5rem" }}>
+            <h3 style={{ marginBottom: "1rem" }}>
+              Customer Work
+              {editingId ? " - Editing" : " - New"}
+            </h3>
 
-            <label htmlFor="customer-name">
-              Customer name
-              <input
-                id="customer-name"
-                required
-                placeholder="Aarav Sharma"
-                value={taskForm.customerName}
-                onChange={(e) => setTaskForm({ ...taskForm, customerName: e.target.value })}
-              />
-            </label>
-
-            <label htmlFor="work-goal">
-              Work goal
-              <input
-                id="work-goal"
-                required
-                placeholder="Finish proposal review"
-                value={taskForm.workGoal}
-                onChange={(e) => setTaskForm({ ...taskForm, workGoal: e.target.value })}
-              />
-            </label>
-
-            <label htmlFor="source-memory">
-              Source memory
-              <textarea
-                id="source-memory"
-                rows={4}
-                placeholder="Paste what the customer browsed, asked, or chatted with the AI bot."
-                value={taskForm.sourceMemory}
-                onChange={(e) =>
-                  setTaskForm({ ...taskForm, sourceMemory: e.target.value })
-                }
-              />
-            </label>
-
-            <div className="two-column">
-              <label htmlFor="deadline">
-                Deadline
+            <form onSubmit={saveTask} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.25rem" }}>
+                  Customer name
+                </label>
                 <input
-                  id="deadline"
-                  required
-                  type="datetime-local"
-                  value={taskForm.deadline}
-                  onChange={(e) =>
-                    setTaskForm({ ...taskForm, deadline: e.target.value })
-                  }
+                  type="text"
+                  value={taskForm.customerName}
+                  onChange={(e) => setTaskForm({ ...taskForm, customerName: e.target.value })}
+                  style={{ width: "100%", padding: "0.5rem" }}
                 />
-              </label>
-              <label htmlFor="daily-time">
-                Daily alert time
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.25rem" }}>
+                  Work goal
+                </label>
                 <input
-                  id="daily-time"
-                  required
-                  type="time"
-                  value={taskForm.dailyTime}
-                  onChange={(e) =>
-                    setTaskForm({ ...taskForm, dailyTime: e.target.value })
-                  }
+                  type="text"
+                  value={taskForm.workGoal}
+                  onChange={(e) => setTaskForm({ ...taskForm, workGoal: e.target.value })}
+                  style={{ width: "100%", padding: "0.5rem" }}
                 />
-              </label>
-            </div>
+              </div>
 
-            <div className="two-column">
-              <label htmlFor="priority">
-                Priority
-                <select
-                  id="priority"
-                  value={taskForm.priority}
+              <div>
+                <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.25rem" }}>
+                  Source memory
+                </label>
+                <textarea
+                  value={taskForm.sourceMemory}
                   onChange={(e) =>
-                    setTaskForm({ ...taskForm, priority: e.target.value })
+                    setTaskForm({ ...taskForm, sourceMemory: e.target.value })
                   }
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="critical">Critical</option>
-                </select>
-              </label>
-              <label htmlFor="status">
-                Status
-                <select
-                  id="status"
-                  value={taskForm.status}
-                  onChange={(e) =>
-                    setTaskForm({ ...taskForm, status: e.target.value })
-                  }
-                >
-                  <option value="active">Active</option>
-                  <option value="complete">Complete</option>
-                </select>
-              </label>
-            </div>
+                  style={{ width: "100%", padding: "0.5rem" }}
+                />
+              </div>
 
-            <div className="actions">
-              <button className="primary-button" type="submit">
-                Save automation
-              </button>
-              <button
-                className="ghost-button"
-                type="button"
-                onClick={() => {
-                  setEditingId(null);
-                  setTaskForm(blankTask);
-                }}
-              >
-                Clear
-              </button>
-            </div>
-          </form>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.25rem" }}>
+                    Deadline
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={taskForm.deadline}
+                    onChange={(e) =>
+                      setTaskForm({ ...taskForm, deadline: e.target.value })
+                    }
+                    style={{ width: "100%", padding: "0.5rem" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.25rem" }}>
+                    Daily alert time
+                  </label>
+                  <input
+                    type="time"
+                    value={taskForm.dailyTime}
+                    onChange={(e) =>
+                      setTaskForm({ ...taskForm, dailyTime: e.target.value })
+                    }
+                    style={{ width: "100%", padding: "0.5rem" }}
+                  />
+                </div>
+              </div>
 
-          <section className="panel chat-panel" aria-labelledby="memory-heading">
-            <div className="panel-title">
-              <h2 id="memory-heading">AI Bot Memory</h2>
-              <span>{state.memories.length} notes</span>
-            </div>
-            <div className="chat-log" aria-live="polite">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.25rem" }}>
+                    Priority
+                  </label>
+                  <select
+                    value={taskForm.priority}
+                    onChange={(e) =>
+                      setTaskForm({ ...taskForm, priority: e.target.value })
+                    }
+                    style={{ width: "100%", padding: "0.5rem" }}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.25rem" }}>
+                    Status
+                  </label>
+                  <select
+                    value={taskForm.status}
+                    onChange={(e) =>
+                      setTaskForm({ ...taskForm, status: e.target.value })
+                    }
+                    style={{ width: "100%", padding: "0.5rem" }}
+                  >
+                    <option value="active">Active</option>
+                    <option value="complete">Complete</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button type="submit" style={{ flex: 1, padding: "0.5rem 1rem" }}>
+                  Save automation
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingId(null);
+                    setTaskForm(blankTask);
+                  }}
+                  style={{ padding: "0.5rem 1rem" }}
+                >
+                  Clear
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section style={{ padding: "1.5rem", border: "1px solid #ddd", borderRadius: "0.5rem" }}>
+            <h3 style={{ marginBottom: "1rem" }}>
+              AI Bot Memory
+              {state.memories.length ? ` - ${state.memories.length} notes` : ""}
+            </h3>
+
+            <div style={{ maxHeight: "300px", overflowY: "auto", marginBottom: "1rem", border: "1px solid #eee", borderRadius: "0.25rem", padding: "0.5rem" }}>
               {state.memories.length ? (
                 state.memories.map((memory) => (
-                  <div className="chat-note" key={memory.id}>
-                    {memory.text}
-                    <time>{formatDate(memory.createdAt)}</time>
+                  <div key={memory.id} style={{ marginBottom: "0.5rem", fontSize: "0.875rem", borderBottom: "1px solid #eee", paddingBottom: "0.5rem" }}>
+                    <div>{memory.text}</div>
+                    <div style={{ fontSize: "0.7rem", opacity: 0.5, marginTop: "0.25rem" }}>
+                      {formatDate(memory.createdAt)}
+                    </div>
                   </div>
                 ))
               ) : (
-                <div className="empty">
+                <div style={{ fontSize: "0.875rem", opacity: 0.6 }}>
                   Customer browsing and AI bot chat notes appear here.
                 </div>
               )}
             </div>
-            <form className="chat-input" onSubmit={addMemory}>
-              <label className="sr-only" htmlFor="memory-text">
+
+            <form onSubmit={addMemory}>
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.5rem" }}>
                 Add customer memory
               </label>
               <input
-                id="memory-text"
-                placeholder="Add browsed/chatted customer context"
+                type="text"
                 value={memoryText}
                 onChange={(e) => setMemoryText(e.target.value)}
+                style={{ width: "100%", padding: "0.5rem", marginBottom: "0.5rem" }}
               />
-              <button className="icon-button" type="submit" title="Add memory">
-                <span aria-hidden="true">+</span>
-                <span className="sr-only">Add memory</span>
+              <button type="submit" style={{ width: "100%", padding: "0.5rem 1rem" }}>
+                + Add memory
               </button>
             </form>
           </section>
-        </section>
+        </div>
 
         {/* Manual Alerts */}
-        <section
-          className="panel"
-          id="manual-alerts"
-          aria-labelledby="manual-alert-heading"
-        >
-          <div className="panel-title">
-            <h2 id="manual-alert-heading">Manual Alert Setter</h2>
-            <span>Database backed</span>
-          </div>
-          <form className="manual-grid" onSubmit={addManualAlert}>
-            <label htmlFor="manual-message">
-              Alert message
+        <section id="manual-alerts" style={{ marginBottom: "2rem", padding: "1.5rem", border: "1px solid #ddd", borderRadius: "0.5rem" }}>
+          <h3 style={{ marginBottom: "1rem" }}>Manual Alert Setter - Database backed</h3>
+
+          <form onSubmit={addManualAlert} style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr", gap: "1rem" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.25rem" }}>
+                Alert message
+              </label>
               <input
-                id="manual-message"
-                required
-                placeholder="Call customer before close of day"
+                type="text"
                 value={manualMessage}
                 onChange={(e) => setManualMessage(e.target.value)}
+                style={{ width: "100%", padding: "0.5rem" }}
               />
-            </label>
-            <label htmlFor="manual-at">
-              Alert date and time
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "bold", marginBottom: "0.25rem" }}>
+                Alert date and time
+              </label>
               <input
-                id="manual-at"
-                required
                 type="datetime-local"
                 value={manualAt}
                 onChange={(e) => setManualAt(e.target.value)}
+                style={{ width: "100%", padding: "0.5rem" }}
               />
-            </label>
-            <button className="primary-button" type="submit">
-              Set manual alert
-            </button>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
+              <button type="submit" style={{ width: "100%", padding: "0.5rem 1rem" }}>
+                Set manual alert
+              </button>
+            </div>
           </form>
         </section>
 
         {/* Active Automations */}
-        <section
-          className="panel"
-          id="automations"
-          aria-labelledby="automations-heading"
-        >
-          <div className="panel-title">
-            <h2 id="automations-heading">Active Automations</h2>
-            <span>{activeTasks.length} active</span>
-          </div>
-          <div className="task-list">
-            {state.tasks.length || state.manualAlerts.length ? (
-              <>
-                {state.tasks.map((task) => (
-                  <article className="task-card" key={task.id}>
-                    <div className="task-head">
-                      <div>
-                        <p className="customer">{task.customerName}</p>
-                        <h3>{task.workGoal}</h3>
-                      </div>
-                      <span className={`badge ${task.priority}`}>
-                        {task.status === "complete" ? "Done" : task.priority}
-                      </span>
-                    </div>
-                    <p className="message">
-                      {createAlertMessage(task, state.memories, tone)}
-                    </p>
-                    <div className="meta-row">
-                      <span>Deadline: {formatDate(task.deadline)}</span>
-                      <span>Daily: {task.dailyTime}</span>
-                      <span>{remainingText(task.deadline)}</span>
-                    </div>
-                    <div className="task-actions">
-                      <button
-                        className="secondary-button"
-                        type="button"
-                        onClick={() => editTask(task)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="ghost-button"
-                        type="button"
-                        onClick={() => completeTask(task.id)}
-                      >
-                        Complete
-                      </button>
-                      <button
-                        className="ghost-button"
-                        type="button"
-                        onClick={() => deleteTask(task.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </article>
-                ))}
+        <section id="automations" style={{ marginBottom: "2rem", padding: "1.5rem", border: "1px solid #ddd", borderRadius: "0.5rem" }}>
+          <h3 style={{ marginBottom: "1rem" }}>
+            Active Automations
+            {activeTasks.length ? ` - ${activeTasks.length} active` : ""}
+          </h3>
 
-                {state.manualAlerts.map((alert) => (
-                  <article className="task-card" key={alert.id}>
-                    <div className="task-head">
-                      <div>
-                        <p className="customer">Manual alert</p>
-                        <h3>{alert.message}</h3>
-                      </div>
-                      <span className={`badge ${alert.fired ? "low" : "high"}`}>
-                        {alert.fired ? "Sent" : "Armed"}
-                      </span>
+          {state.tasks.length || state.manualAlerts.length ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {state.tasks.map((task) => (
+                <div key={task.id} style={{ padding: "1rem", border: "1px solid #eee", borderRadius: "0.25rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "0.5rem" }}>
+                    <div>
+                      <div style={{ fontWeight: "bold" }}>{task.customerName}</div>
+                      <div style={{ fontSize: "0.875rem" }}>{task.workGoal}</div>
                     </div>
-                    <div className="meta-row">
-                      <span>{formatDate(alert.alertAt)}</span>
+                    <div style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem", background: task.status === "complete" ? "#d0d0d0" : "#fff3cd", borderRadius: "0.25rem" }}>
+                      {task.status === "complete" ? "Done" : task.priority}
                     </div>
-                    <div className="task-actions">
-                      <button
-                        className="ghost-button"
-                        type="button"
-                        onClick={() => deleteManualAlert(alert.id)}
-                      >
-                        Delete
-                      </button>
+                  </div>
+
+                  <div style={{ fontSize: "0.875rem", opacity: 0.7, marginBottom: "0.5rem" }}>
+                    {createAlertMessage(task, state.memories, tone)}
+                  </div>
+
+                  <div style={{ fontSize: "0.75rem", opacity: 0.6, marginBottom: "0.5rem" }}>
+                    <div>Deadline: {formatDate(task.deadline)}</div>
+                    <div>Daily: {task.dailyTime}</div>
+                    <div>{remainingText(task.deadline)}</div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button onClick={() => editTask(task)} style={{ padding: "0.25rem 0.75rem", fontSize: "0.75rem" }}>
+                      Edit
+                    </button>
+                    <button onClick={() => completeTask(task.id)} style={{ padding: "0.25rem 0.75rem", fontSize: "0.75rem" }}>
+                      Complete
+                    </button>
+                    <button onClick={() => deleteTask(task.id)} style={{ padding: "0.25rem 0.75rem", fontSize: "0.75rem" }}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {state.manualAlerts.map((alert) => (
+                <div key={alert.id} style={{ padding: "1rem", border: "1px solid #eee", borderRadius: "0.25rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "0.5rem" }}>
+                    <div>
+                      <div style={{ fontWeight: "bold" }}>Manual alert</div>
+                      <div style={{ fontSize: "0.875rem" }}>{alert.message}</div>
                     </div>
-                  </article>
-                ))}
-              </>
-            ) : (
-              <div className="empty">
-                Create a customer work automation to start the pulse.
-              </div>
-            )}
-          </div>
+                    <div style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem", background: alert.fired ? "#d0d0d0" : "#cfe2ff", borderRadius: "0.25rem" }}>
+                      {alert.fired ? "Sent" : "Armed"}
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: "0.75rem", opacity: 0.6, marginBottom: "0.5rem" }}>
+                    {formatDate(alert.alertAt)}
+                  </div>
+
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button onClick={() => deleteManualAlert(alert.id)} style={{ padding: "0.25rem 0.75rem", fontSize: "0.75rem" }}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: "0.875rem", opacity: 0.6 }}>
+              Create a customer work automation to start the pulse.
+            </div>
+          )}
         </section>
-      </section>
+      </main>
 
       {/* Toast */}
       {toast && (
-        <div className="toast" role="status" aria-live="polite">
+        <div
+          style={{
+            position: "fixed",
+            bottom: "1.5rem",
+            right: "1.5rem",
+            padding: "1rem",
+            background: "#333",
+            color: "white",
+            borderRadius: "0.5rem",
+            zIndex: 1000,
+          }}
+        >
           {toast}
         </div>
       )}
-    </main>
+    </div>
   );
 }
